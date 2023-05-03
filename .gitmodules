@@ -1,3 +1,12 @@
 [submodule "NPC-Full-Fighting-Style"]
 	path = NPC-Full-Fighting-Style
 	url = https://github.com/RanggaBS/NPC-Full-Fighting-Style
+[submodule "Fighting-Cheers"]
+	path = Fighting-Cheers
+	url = https://github.com/RanggaBS/Fighting-Cheers
+[submodule "Environment-Interactions"]
+	path = Environment-Interactions
+	url = https://github.com/RanggaBS/Environment-Interactions
+[submodule "Selector_Mod-AE"]
+	path = Selector_Mod-AE
+	url = https://github.com/RanggaBS/Selector_Mod-AE
