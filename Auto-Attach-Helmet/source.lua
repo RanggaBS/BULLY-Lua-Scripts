@@ -409,7 +409,7 @@ function main()
 				Wait(0)
 				if not udahPakeHelm then	-- MUST ADD THIS BEFORE THE LINE BELOW TO AVOID CRASH (not really sure)
 					local index, id = ClothingGetPlayer(0)
-					--if ClothingGetPlayer(0) ~= ObjectNameToHashID("SP_BikeHelmet") then		-- CRASH IF THIS STATEMENT IS PLACED DIRECTLY AFTER LOOP
+					--if ClothingGetPlayer(0) ~= ObjectNameToHashID("SP_BikeHelmet") then		-- CRASH IF THIS STATEMENT IS PLACED DIRECTLY AFTER LOOP (maybe bcs this function returns 2 value and I'm not store it first in variables)
 					if index ~= ObjectNameToHashID("SP_BikeHelmet") then
 						pakaian = GetPlayerClothes()
 						ClothingSetPlayer(0, "SP_BikeHelmet")
