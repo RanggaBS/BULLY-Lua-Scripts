@@ -1,2 +1,3 @@
 # BULLY-Lua-Scripts
-desc
+
+A collection of BULLY script mod that I made.
