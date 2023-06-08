@@ -1,5 +1,6 @@
 RequireLoaderVersion(3)
 
+
 _G.math.clamp = function(value, min, max)
 	return value < min and min or (value > max and max or value)
 end
@@ -11,6 +12,7 @@ end
 _G.math.randomrange = function(min, max)
 	return min + math.random() * (max - min)
 end
+
 
 -- easings.net
 _G.easing = {}
@@ -27,9 +29,21 @@ function DistanceBetweenPoints(x, y)
 	return math.sqrt((x-y)^2)
 end
 
+
 function main()
 	while not SystemIsReady() do
 		Wait(0)
+	end
+
+	local forceUnlockGary = false
+	local forceUnlockPete = false
+	local function GetGaryUnlocked()
+		-- Unlock Gary after This Is Your School mission and before Chapter 1 finished, or after Chapter 5 finished
+		return forceUnlockGary or ((IsMissionCompleated("1_02B") and not IsMissionCompleated("1_B")) or IsMissionCompleated("6_B"))
+	end
+	local function GetPeteUnlocked()
+		-- Unlock Pete after Chapter 1 finished
+		return forceUnlockPete or IsMissionCompleated("1_B")
 	end
 
 	GTAV_CHAR_SWITCH = {
@@ -38,9 +52,9 @@ function main()
 		mouse = {0, 0},
 		char = {
 			select = 1, lastSelected = 1,
-			{model = "player", pos = {330, 131, 5.1}},
-			{model = "Nemesis_Gary", pos = {580, -90, 5.5}},
-			{model = "Peter", pos = {250, -73, 6.2}}
+			{model = "player", pos = {330, 131, 5.1}, statType = "STAT_PLAYER"},
+			{model = "Nemesis_Gary", pos = {580, -90, 5.5}, statType = "STAT_GS_GARY"},
+			{model = "Peter", pos = {250, -73, 6.2}, statType = "STAT_GS_MALE_A"}
 		},
 		textures = {
 			-- Wheel
@@ -71,27 +85,46 @@ function main()
 
 			-- Stats
 			{group = "stat", type = "rectangle", amount = {
-				{pos = {0.825, 0.3}, size = {0.17, 0.375}, color = {0, 0, 0}, alpha = 127}
+				{pos = {0.825, 0.345}, size = {0.17, 0.33}, color = {0, 0, 0}, alpha = 127}
 			}},
 			{group = "stat", type = "text", amount = {
-				{statName = "Strength", 	format = {Formatting = 2, Color = {255, 255, 255, 255}, Align = "LEFT", Scale = 1, Position = {0.835, 0.31}}},
-				{statName = "Intelligence", format = {Formatting = 2, Color = {255, 255, 255, 255}, Align = "LEFT", Scale = 1, Position = {0.835, 0.39}}}
+				{statName = "Stamina",			format = {Formatting = 2, Color = {255, 255, 255, 255}, Align = "LEFT", Scale = 1, Position = {0.835, 0.36}}},	-- Y Position: +0.08
+				{statName = "Strength", 		format = {Formatting = 2, Color = {255, 255, 255, 255}, Align = "LEFT", Scale = 1, Position = {0.835, 0.44}}},
+				{statName = "Weapon Accuracy",	format = {Formatting = 2, Color = {255, 255, 255, 255}, Align = "LEFT", Scale = 1, Position = {0.835, 0.52}}},
+				{statName = "Intelligence", 	format = {Formatting = 2, Color = {255, 255, 255, 255}, Align = "LEFT", Scale = 1, Position = {0.835, 0.6}}},
 			}},
 
 			{group = "stat_value", type = "rectangle", amount = {
+				-- Value: 0 - 100
+				-- Y Position: +0.08
+
+				-- Stamina
+				{pos = {0.835, 0.395}, size = {0.15, 0.02}, color = {249, 174, 29}, alpha = 255, value = {
+					100,	-- char 1
+					60,		-- char 2
+					60		-- char 3
+				}},
+
 				-- Strength
-				{pos = {0.835, 0.345}, size = {0.15, 0.02}, color = {249, 174, 29}, alpha = 255, value = {
-					80,	-- char 1
+				{pos = {0.835, 0.475}, size = {0.15, 0.02}, color = {249, 174, 29}, alpha = 255, value = {
+					85,	-- char 1
 					60,	-- char 2
 					30	-- char 3
 				}},
 
+				-- Weapon Accuracy
+				{pos = {0.835, 0.555}, size = {0.15, 0.02}, color = {249, 174, 29}, alpha = 255, value = {
+					95,	-- char 1
+					50,	-- char 2
+					20	-- char 3
+				}},
+
 				-- Intelligence
-				{pos = {0.835, 0.425}, size = {0.15, 0.02}, color = {249, 174, 29}, alpha = 255, value = {
+				{pos = {0.835, 0.635}, size = {0.15, 0.02}, color = {249, 174, 29}, alpha = 255, value = {
 					70,	-- char 1
 					50,	-- char 2
 					90	-- char 3
-				}}
+				}},
 			}}
 		},
 	}
@@ -113,12 +146,22 @@ function main()
 		-- Toggle
 		if IsKeyPressed("LCONTROL") then
 			if GetTimer() >= GTAV_CHAR_SWITCH.timer+500 then
-				if AreaGetVisible() == 0 then
-					GTAV_CHAR_SWITCH.active = true
+				if MissionActive() then
+					if GetCutsceneRunning() == 0 then
+						SoundPlay2D("WrongBtn")
+						DrawTextInline("Finish the mission first!", 3, 1)
+						Wait(1500)
+					end
 				else
-					SoundPlay2D("WrongBtn")
-					TextPrintString("You can't switch characters while you're in an interior!", 3, 1)
-					Wait(1500)
+					if AreaGetVisible() == 0 then
+						if GetCutsceneRunning() == 0 then
+							GTAV_CHAR_SWITCH.active = true
+						end
+					else
+						SoundPlay2D("WrongBtn")
+						DrawTextInline("You can't switch characters while you're in an interior!", 3, 1)
+						Wait(1500)
+					end
 				end
 			end
 		else
@@ -146,17 +189,17 @@ function main()
 				PlayerLockButtonInputsExcept(true, 16, 17)
 
 				GTAV_CHAR_SWITCH.mouse[1], GTAV_CHAR_SWITCH.mouse[2] = math.clamp(GTAV_CHAR_SWITCH.mouse[1] + (-GetStickValue(18, 0) / 10), -0.3, 0.3), math.clamp(GTAV_CHAR_SWITCH.mouse[2] + (GetStickValue(19, 0) / 10), 0, 0.3)
-				if GTAV_CHAR_SWITCH.mouse[1] < -0.2 and GTAV_CHAR_SWITCH.char.select ~= 2 then
+				if GTAV_CHAR_SWITCH.mouse[1] <= -0.3 and GTAV_CHAR_SWITCH.char.select ~= 2 and GetGaryUnlocked() then
 					GTAV_CHAR_SWITCH.char.select = 2
-					GTAV_CHAR_SWITCH.mouse[1], GTAV_CHAR_SWITCH.mouse[2] = -0.2, 0
+					GTAV_CHAR_SWITCH.mouse[1], GTAV_CHAR_SWITCH.mouse[2] = -0.3, 0
 					SoundPlay2D("NavDwn")
-				elseif GTAV_CHAR_SWITCH.mouse[1] > 0.2 and GTAV_CHAR_SWITCH.char.select ~= 3 then
+				elseif GTAV_CHAR_SWITCH.mouse[1] >= 0.3 and GTAV_CHAR_SWITCH.char.select ~= 3 and GetPeteUnlocked() then
 					GTAV_CHAR_SWITCH.char.select = 3
-					GTAV_CHAR_SWITCH.mouse[1], GTAV_CHAR_SWITCH.mouse[2] = 0.2, 0
+					GTAV_CHAR_SWITCH.mouse[1], GTAV_CHAR_SWITCH.mouse[2] = 0.3, 0
 					SoundPlay2D("NavDwn")
-				elseif GTAV_CHAR_SWITCH.mouse[2] > 0.2 and GTAV_CHAR_SWITCH.char.select ~= 1 then
+				elseif GTAV_CHAR_SWITCH.mouse[2] >= 0.3 and GTAV_CHAR_SWITCH.char.select ~= 1 then
 					GTAV_CHAR_SWITCH.char.select = 1
-					GTAV_CHAR_SWITCH.mouse[1], GTAV_CHAR_SWITCH.mouse[2] = 0, 0.2
+					GTAV_CHAR_SWITCH.mouse[1], GTAV_CHAR_SWITCH.mouse[2] = 0, 0.3
 					SoundPlay2D("NavDwn")
 				end
 
@@ -170,12 +213,42 @@ function main()
 						if layer == 3 then
 							local bg_selected_char = component.amount[GTAV_CHAR_SWITCH.char.select]
 							DrawTexture(bg_selected_char.T, bg_selected_char.pos[1], bg_selected_char.pos[2], bg_selected_char.scale * bg_selected_char.aspectRatio, bg_selected_char.scale, bg_selected_char.color[1], bg_selected_char.color[2], bg_selected_char.color[3], bg_selected_char.alpha)
+						elseif layer == 5 then
+							for char_num, texture in ipairs(component.amount) do
+								-- Jimmy
+								if char_num == 1 then
+									DrawTexture(
+										texture.T,
+										texture.pos[1], texture.pos[2],
+										texture.scale * texture.aspectRatio, texture.scale,
+										texture.color[1], texture.color[2], texture.color[3],
+										texture.alpha
+									)
+								else
+									-- Gary and Pete
+									DrawTexture(
+										texture.T,
+										texture.pos[1], texture.pos[2],
+										texture.scale * texture.aspectRatio, texture.scale,
+											texture.fileName == "CHAR_3" and (GetPeteUnlocked() and 255 or 0) or (GetGaryUnlocked() and 255 or 0),
+											texture.fileName == "CHAR_3" and (GetPeteUnlocked() and 255 or 0) or (GetGaryUnlocked() and 255 or 0),
+											texture.fileName == "CHAR_3" and (GetPeteUnlocked() and 255 or 0) or (GetGaryUnlocked() and 255 or 0),
+										texture.alpha
+									)
+								end
+							end
 						elseif layer == 6 then
 							local wheel_char_outline = component.amount[GTAV_CHAR_SWITCH.char.lastSelected]
 							DrawTexture(wheel_char_outline.T, wheel_char_outline.pos[1], wheel_char_outline.pos[2], wheel_char_outline.scale * wheel_char_outline.aspectRatio, wheel_char_outline.scale, wheel_char_outline.color[1], wheel_char_outline.color[2], wheel_char_outline.color[3], wheel_char_outline.alpha)
 						else
 							for __, texture in ipairs(component.amount) do
-								DrawTexture(texture.T, texture.pos[1], texture.pos[2], texture.scale * texture.aspectRatio, texture.scale, texture.color[1], texture.color[2], texture.color[3], texture.alpha)
+								DrawTexture(
+									texture.T,
+									texture.pos[1], texture.pos[2],
+									texture.scale * texture.aspectRatio, texture.scale,
+									texture.color[1], texture.color[2], texture.color[3],
+									texture.alpha
+								)
 							end
 						end
 					elseif component.type == "text" then
@@ -241,6 +314,8 @@ function main()
 				-- Move camera
 				timer = GetTimer()
 				PedSetFlag(gPlayer, 9, true)
+				-- PedSetEffectedByGravity(gPlayer, false)
+				-- PedSetUsesCollisionScripted(gPlayer, true)
 				while DistanceBetweenCoords2d(cam_pos[1], cam_pos[2], GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[1], GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[2]) >= 0.05 do
 					Wait(0)
 
@@ -254,16 +329,19 @@ function main()
 				end
 
 				PlayerSetPosSimple(GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[1], GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[2], GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[3])
+				-- PedSetEffectedByGravity(gPlayer, true)
+				-- PedSetUsesCollisionScripted(gPlayer, false)
 				PlayerSwapModel(GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].model)
 				PedSetFlag(gPlayer, 9, false)
 				PedSetActionTree(gPlayer, "/Global/Player", "Act/Player.act")
 				PedSetAITree(gPlayer, "/Global/PlayerAI", "Act/PlayerAI.act")
+				PedSetStatsType(gPlayer, GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].statType)
 				PlayerSetPunishmentPoints(0)
 
 				-- Move camera down
 				for i = 3, 1, -1 do
 					timer = GetTimer()
-					cam_pos_dest[3] = i == 1 and GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[3]+1 or cam_pos[3]-(DistanceBetweenPoints(GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[3], cam_pos[3])*0.6) --i > 1 and (cam_pos[3] - heights[i]) or GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[3]+1
+					cam_pos_dest[3] = i == 1 and GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[3]+1 or cam_pos[3]-(DistanceBetweenPoints(GTAV_CHAR_SWITCH.char[GTAV_CHAR_SWITCH.char.select].pos[3], cam_pos[3])*0.6)
 					while DistanceBetweenPoints(cam_pos[3], cam_pos_dest[3]) >= 0.015 do
 						Wait(0)
 
