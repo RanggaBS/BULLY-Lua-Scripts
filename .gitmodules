@@ -10,3 +10,6 @@
 [submodule "Selector_Mod-AE"]
 	path = Selector_Mod-AE
 	url = https://github.com/RanggaBS/Selector_Mod-AE
+[submodule "BullySE-CameraFOV-DSL"]
+	path = BullySE-CameraFOV-DSL
+	url = https://github.com/RanggaBS/BullySE-CameraFOV-DSL
